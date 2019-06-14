@@ -1,0 +1,85 @@
+IF Mopeartiontype = '买入' THEN
+			
+			/*将用户的可用资金减去交易金额 冻结资金加上交易金额*/
+			UPDATE User set cny_free = cny_free-Mdealmoney , cny_freezed = cny_freezed+Mdealmoney where UserName = Musername;
+-- 			/*先去检查该公司有没有剩余的没有被买走的流通股票*/
+			SELECT CirculationAmount,StockPrice INTO residualamount,residualstockprice FROM Stock WHERE StockName = Mstockname;
+			INSERT INTO tempStockInfo VALUES(residualamount,residualstockprice);   /*将查询到的信息插入temp表中*/
+-- 			/*如果发行有剩余并且多于用户要买的数量*/
+			IF residualamount >= Mdealamount THEN
+				SELECT initialdeal(Mdealamount,Mstocknum,Musername,residualstockprice) into res;
+				INSERT INTO MakeDeal VALUES(NULL,-1,MdealID,residualstockprice,'root',Musername,Mdealamount,Mstocknum,NOW(),1);    /*将成交记录加入到成交表中设置其交易类型*/
+				INSERT INTO tempStockInfo VALUES(residualamount,residualstockprice);   /*将查询到的信息插入temp表中*/
+-- 			/*如果发行有剩余但是少于用户要买的数量*/
+-- 			ELSEIF residualamount < Mdealamount AND residualamount > 0 THEN
+-- 				SELECT initialdeal(residualamount,Mstocknum,Musername,residualstockprice) into res;
+-- 				INSERT INTO MakeDeal VALUES(NULL,-1,MdealID,residualstockprice,'root',Musername,residualamount,Mstocknum,NOW(),2);      /*将成交记录加入到成交表中*/
+-- 			/*如果发行数量已经没有 那么只能等着别人卖出股票*/
+			ELSEIF residualamount = 0 THEN 
+				INSERT INTO TempRecord VALUES(Musername,Mdealtime,Mstocknum,Mstockname,Mopeartiontype,Mdealamount,Mdealprice,Mdealmoney,residualamount);
+				SELECT COUNT(*),DealID,UserName,StockNum,StockName,DealAmount,DealPrice,DealMoney                         /*查询卖出类型的股票*/
+				INTO meetdealcount,MeetdealID,Meetusername,Meetstocknum,Meetstockname,Meetdealamount,Meetdealprice,Meetdealmoney/*将查询出来的股票信息存起来*/
+				FROM TradingRecord
+				WHERE StockNum = Mstocknum                                                                                 /*股票代码符合的*/
+				AND OpeartionType = '卖出'                                                                                  /*属于卖出的股票*/
+				AND DealStatus = 0                                                                                         /*还没有成交的*/
+				AND DealPrice <= Mdealprice                                                                                   /*卖出的价格小于买入的价格的 【1】*/ 
+				AND (Mdealprice-DealPrice) = (SELECT MAX(Mdealprice-DealPrice) FROM TradingRecord);                         /*卖出的价格最低的 【2】*/
+-- 				AND (unix_timestamp(Mdealtime) - unix_timestamp(DealTime)) 
+-- 						= (SELECT MAX(unix_timestamp(Mdealtime) - unix_timestamp(DealTime)) FROM TradingRecord);                /*卖出时间最早的 【3】*/
+-- 				
+-- 				
+-- 				/*此时交易规则如下：
+-- 						买入股票的时候 要去查询在此之前卖出的股票的交易记录
+-- 						 假如卖出类型的股票的价格全部高于将要买入的股票的价格 此时 这个买入的交易就不能成交 只能等待下一个卖出的交易是否符合条件
+-- 						 假如某个卖出类型的交易价格低于将要买入的股票价格，那么，此时这个买入交易与这个卖出交易成立 成交价格为卖出类型交易的价格 【1】
+-- 						 假如这个符合条件的交易有好几个，那么选择价格最低的买入。【2】
+-- 						 假如符合这个条件的交易有好多个，并且价格都一样，那么选择卖出时间最早的交易进行成交【3】
+-- 						 
+-- 						 将查询出来的符合条件的交易数量赋予meetdealcount。此时，meetdealcount只有两个值可选，一个是0代表没有符合条件的 一个是1 表示找到一个符合条件的
+-- 					*/
+				
+				IF meetdealcount = 1  THEN /*找到一个符合条件的*/
+				INSERT INTO TempRecord VALUES(Musername,Mdealtime,Mstocknum,Mstockname,Mopeartiontype,Mdealamount,Mdealprice,Mdealmoney,9);
+					IF Meetdealamount >= Mdealamount THEN /*如果卖出的数量大于买入的数量 此时按照买入的数量进行交易*/
+						SELECT buyDeal(Mdealamount,Meetstocknum,Musername,Meetdealprice,Meetusername) into res;
+						INSERT INTO MakeDeal VALUES(MeetdealID,MdealID,Meetdealprice,Meetusername,Musername,Mdealamount,Mstocknum,NOW(),3);
+					ELSEIF Meetdealamount < Mdealamount THEN
+						SELECT buyDeal(Meetdealamount,Meetstocknum,Musername,Meetdealprice,Meetusername) into res;
+						INSERT INTO MakeDeal VALUES(MeetdealID,MdealID,Meetdealprice,Meetusername,Musername,Meetdealamount,Mstocknum,NOW(),4);
+					END IF;
+				END IF;
+			END IF;
+	ELSEIF Mopeartiontype = "卖出" THEN
+		
+
+		UPDATE UserStock SET StockFreezed = StockFreezed + Mdealamount , StockAmount = StockAmount - Mdealamount     /*冻结相应的股票*/
+		WHERE StockNum = Mstocknum AND UserName = Musername;
+-- 		/*此时的卖出股票 交易策略应该是寻找价格高于自己的买入类型的交易 
+-- 			假如买入类型的股票的价格全都低于卖出的价格 那么这个交易不能成交 只能等下一位买入的交易
+-- 			假如某个买入类型的交易价格高于这个卖出的 那么 成交
+-- 			如果有多个 那么选择价格最高的
+-- 			如果依然有多个 那么选择时间最早的
+-- 			*/
+		SELECT COUNT(*),DealID,UserName,StockNum,StockName,DealAmount,DealPrice,DealMoney                         /*查询卖出类型的股票*/
+				INTO meetdealcount,MeetdealID,Meetusername,Meetstocknum,Meetstockname,Meetdealamount,Meetdealprice,Meetdealmoney/*将查询出来的股票信息存起来*/
+				FROM TradingRecord
+				WHERE StockNum = Mstocknum                                                                                 /*股票代码符合的*/
+				AND OpeartionType = '买入'                                                                                  /*属于卖出的股票*/
+				AND DealStatus = 0                                                                                         /*还没有成交的*/
+				AND DealPrice > Mdealprice                                                                                   /*买入的价格大于卖出的价格的 【1】*/ 
+				AND (DealPrice-Mdealprice) = (SELECT MAX(DealPrice-Mdealprice) FROM TradingRecord);                                      /*买入的价格最高的 【2】*/
+-- 				AND (unix_timestamp(Mdealtime) - unix_timestamp(DealTime)) 
+-- 						= (SELECT MAX(unix_timestamp(Mdealtime) - unix_timestamp(DealTime)) from TradingRecord);                /*买入的时间最早的 【3】*/
+			
+		IF meetdealcount = 1 THEN                                                                                        /*找到一个符合条件的*/
+		INSERT INTO TempRecordSell VALUES(Musername,Mdealtime,Mstocknum,Mstockname,Mopeartiontype,Mdealamount,Mdealprice,Mdealmoney,0);
+				IF Meetdealamount >= Mdealamount THEN  /*如果 买入的数量 大于卖出的数量 则此时按照卖出的数量*/
+					SELECT sellDeal(Mdealamount,Meetstocknum,Musername,Meetdealprice,Meetusername) into res;
+					INSERT INTO MakeDeal VALUES(MdealID,MeetdealID,Meetdealprice,Musername,Meetusername,Mdealamount,Mstocknum,NOW(),5);
+				ELSEIF Meetdealamount < dealamount  THEN /*如果 买入的数量小于 卖出的数量 那么此时按照买入的来*/
+					SELECT sellDeal(Meetdealamount,Meetstocknum,Musername,Meetdealprice,Meetusername) INTO res;
+					INSERT INTO MakeDeal VALUES(dealID,MeetdealID,Meetdealprice,Musername,Meetusername,Mdealamount,Mstocknum,NOW(),6);
+				END IF;
+		END IF;
+	END IF;
