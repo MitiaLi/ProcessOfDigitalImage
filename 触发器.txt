@@ -1,47 +1,47 @@
-IF Mopeartiontype = 'ÂòÈë' THEN
+IF Mopeartiontype = 'ä¹°å…¥' THEN
 			
-			/*½«ÓÃ»§µÄ¿ÉÓÃ×Ê½ğ¼õÈ¥½»Ò×½ğ¶î ¶³½á×Ê½ğ¼ÓÉÏ½»Ò×½ğ¶î*/
+			/*å°†ç”¨æˆ·çš„å¯ç”¨èµ„é‡‘å‡å»äº¤æ˜“é‡‘é¢ å†»ç»“èµ„é‡‘åŠ ä¸Šäº¤æ˜“é‡‘é¢*/
 			UPDATE User set cny_free = cny_free-Mdealmoney , cny_freezed = cny_freezed+Mdealmoney where UserName = Musername;
--- 			/*ÏÈÈ¥¼ì²é¸Ã¹«Ë¾ÓĞÃ»ÓĞÊ£ÓàµÄÃ»ÓĞ±»Âò×ßµÄÁ÷Í¨¹ÉÆ±*/
+-- 			/*å…ˆå»æ£€æŸ¥è¯¥å…¬å¸æœ‰æ²¡æœ‰å‰©ä½™çš„æ²¡æœ‰è¢«ä¹°èµ°çš„æµé€šè‚¡ç¥¨*/
 			SELECT CirculationAmount,StockPrice INTO residualamount,residualstockprice FROM Stock WHERE StockName = Mstockname;
-			INSERT INTO tempStockInfo VALUES(residualamount,residualstockprice);   /*½«²éÑ¯µ½µÄĞÅÏ¢²åÈëtemp±íÖĞ*/
--- 			/*Èç¹û·¢ĞĞÓĞÊ£Óà²¢ÇÒ¶àÓÚÓÃ»§ÒªÂòµÄÊıÁ¿*/
+			INSERT INTO tempStockInfo VALUES(residualamount,residualstockprice);   /*å°†æŸ¥è¯¢åˆ°çš„ä¿¡æ¯æ’å…¥tempè¡¨ä¸­*/
+-- 			/*å¦‚æœå‘è¡Œæœ‰å‰©ä½™å¹¶ä¸”å¤šäºç”¨æˆ·è¦ä¹°çš„æ•°é‡*/
 			IF residualamount >= Mdealamount THEN
 				SELECT initialdeal(Mdealamount,Mstocknum,Musername,residualstockprice) into res;
-				INSERT INTO MakeDeal VALUES(NULL,-1,MdealID,residualstockprice,'root',Musername,Mdealamount,Mstocknum,NOW(),1);    /*½«³É½»¼ÇÂ¼¼ÓÈëµ½³É½»±íÖĞÉèÖÃÆä½»Ò×ÀàĞÍ*/
-				INSERT INTO tempStockInfo VALUES(residualamount,residualstockprice);   /*½«²éÑ¯µ½µÄĞÅÏ¢²åÈëtemp±íÖĞ*/
--- 			/*Èç¹û·¢ĞĞÓĞÊ£Óàµ«ÊÇÉÙÓÚÓÃ»§ÒªÂòµÄÊıÁ¿*/
+				INSERT INTO MakeDeal VALUES(NULL,-1,MdealID,residualstockprice,'root',Musername,Mdealamount,Mstocknum,NOW(),1);    /*å°†æˆäº¤è®°å½•åŠ å…¥åˆ°æˆäº¤è¡¨ä¸­è®¾ç½®å…¶äº¤æ˜“ç±»å‹*/
+				INSERT INTO tempStockInfo VALUES(residualamount,residualstockprice);   /*å°†æŸ¥è¯¢åˆ°çš„ä¿¡æ¯æ’å…¥tempè¡¨ä¸­*/
+-- 			/*å¦‚æœå‘è¡Œæœ‰å‰©ä½™ä½†æ˜¯å°‘äºç”¨æˆ·è¦ä¹°çš„æ•°é‡*/
 -- 			ELSEIF residualamount < Mdealamount AND residualamount > 0 THEN
 -- 				SELECT initialdeal(residualamount,Mstocknum,Musername,residualstockprice) into res;
--- 				INSERT INTO MakeDeal VALUES(NULL,-1,MdealID,residualstockprice,'root',Musername,residualamount,Mstocknum,NOW(),2);      /*½«³É½»¼ÇÂ¼¼ÓÈëµ½³É½»±íÖĞ*/
--- 			/*Èç¹û·¢ĞĞÊıÁ¿ÒÑ¾­Ã»ÓĞ ÄÇÃ´Ö»ÄÜµÈ×Å±ğÈËÂô³ö¹ÉÆ±*/
+-- 				INSERT INTO MakeDeal VALUES(NULL,-1,MdealID,residualstockprice,'root',Musername,residualamount,Mstocknum,NOW(),2);      /*å°†æˆäº¤è®°å½•åŠ å…¥åˆ°æˆäº¤è¡¨ä¸­*/
+-- 			/*å¦‚æœå‘è¡Œæ•°é‡å·²ç»æ²¡æœ‰ é‚£ä¹ˆåªèƒ½ç­‰ç€åˆ«äººå–å‡ºè‚¡ç¥¨*/
 			ELSEIF residualamount = 0 THEN 
 				INSERT INTO TempRecord VALUES(Musername,Mdealtime,Mstocknum,Mstockname,Mopeartiontype,Mdealamount,Mdealprice,Mdealmoney,residualamount);
-				SELECT COUNT(*),DealID,UserName,StockNum,StockName,DealAmount,DealPrice,DealMoney                         /*²éÑ¯Âô³öÀàĞÍµÄ¹ÉÆ±*/
-				INTO meetdealcount,MeetdealID,Meetusername,Meetstocknum,Meetstockname,Meetdealamount,Meetdealprice,Meetdealmoney/*½«²éÑ¯³öÀ´µÄ¹ÉÆ±ĞÅÏ¢´æÆğÀ´*/
+				SELECT COUNT(*),DealID,UserName,StockNum,StockName,DealAmount,DealPrice,DealMoney                         /*æŸ¥è¯¢å–å‡ºç±»å‹çš„è‚¡ç¥¨*/
+				INTO meetdealcount,MeetdealID,Meetusername,Meetstocknum,Meetstockname,Meetdealamount,Meetdealprice,Meetdealmoney/*å°†æŸ¥è¯¢å‡ºæ¥çš„è‚¡ç¥¨ä¿¡æ¯å­˜èµ·æ¥*/
 				FROM TradingRecord
-				WHERE StockNum = Mstocknum                                                                                 /*¹ÉÆ±´úÂë·ûºÏµÄ*/
-				AND OpeartionType = 'Âô³ö'                                                                                  /*ÊôÓÚÂô³öµÄ¹ÉÆ±*/
-				AND DealStatus = 0                                                                                         /*»¹Ã»ÓĞ³É½»µÄ*/
-				AND DealPrice <= Mdealprice                                                                                   /*Âô³öµÄ¼Û¸ñĞ¡ÓÚÂòÈëµÄ¼Û¸ñµÄ ¡¾1¡¿*/ 
-				AND (Mdealprice-DealPrice) = (SELECT MAX(Mdealprice-DealPrice) FROM TradingRecord);                         /*Âô³öµÄ¼Û¸ñ×îµÍµÄ ¡¾2¡¿*/
+				WHERE StockNum = Mstocknum                                                                                 /*è‚¡ç¥¨ä»£ç ç¬¦åˆçš„*/
+				AND OpeartionType = 'å–å‡º'                                                                                  /*å±äºå–å‡ºçš„è‚¡ç¥¨*/
+				AND DealStatus = 0                                                                                         /*è¿˜æ²¡æœ‰æˆäº¤çš„*/
+				AND DealPrice <= Mdealprice                                                                                   /*å–å‡ºçš„ä»·æ ¼å°äºä¹°å…¥çš„ä»·æ ¼çš„ ã€1ã€‘*/ 
+				AND (Mdealprice-DealPrice) = (SELECT MAX(Mdealprice-DealPrice) FROM TradingRecord);                         /*å–å‡ºçš„ä»·æ ¼æœ€ä½çš„ ã€2ã€‘*/
 -- 				AND (unix_timestamp(Mdealtime) - unix_timestamp(DealTime)) 
--- 						= (SELECT MAX(unix_timestamp(Mdealtime) - unix_timestamp(DealTime)) FROM TradingRecord);                /*Âô³öÊ±¼ä×îÔçµÄ ¡¾3¡¿*/
+-- 						= (SELECT MAX(unix_timestamp(Mdealtime) - unix_timestamp(DealTime)) FROM TradingRecord);                /*å–å‡ºæ—¶é—´æœ€æ—©çš„ ã€3ã€‘*/
 -- 				
 -- 				
--- 				/*´ËÊ±½»Ò×¹æÔòÈçÏÂ£º
--- 						ÂòÈë¹ÉÆ±µÄÊ±ºò ÒªÈ¥²éÑ¯ÔÚ´ËÖ®Ç°Âô³öµÄ¹ÉÆ±µÄ½»Ò×¼ÇÂ¼
--- 						 ¼ÙÈçÂô³öÀàĞÍµÄ¹ÉÆ±µÄ¼Û¸ñÈ«²¿¸ßÓÚ½«ÒªÂòÈëµÄ¹ÉÆ±µÄ¼Û¸ñ ´ËÊ± Õâ¸öÂòÈëµÄ½»Ò×¾Í²»ÄÜ³É½» Ö»ÄÜµÈ´ıÏÂÒ»¸öÂô³öµÄ½»Ò×ÊÇ·ñ·ûºÏÌõ¼ş
--- 						 ¼ÙÈçÄ³¸öÂô³öÀàĞÍµÄ½»Ò×¼Û¸ñµÍÓÚ½«ÒªÂòÈëµÄ¹ÉÆ±¼Û¸ñ£¬ÄÇÃ´£¬´ËÊ±Õâ¸öÂòÈë½»Ò×ÓëÕâ¸öÂô³ö½»Ò×³ÉÁ¢ ³É½»¼Û¸ñÎªÂô³öÀàĞÍ½»Ò×µÄ¼Û¸ñ ¡¾1¡¿
--- 						 ¼ÙÈçÕâ¸ö·ûºÏÌõ¼şµÄ½»Ò×ÓĞºÃ¼¸¸ö£¬ÄÇÃ´Ñ¡Ôñ¼Û¸ñ×îµÍµÄÂòÈë¡£¡¾2¡¿
--- 						 ¼ÙÈç·ûºÏÕâ¸öÌõ¼şµÄ½»Ò×ÓĞºÃ¶à¸ö£¬²¢ÇÒ¼Û¸ñ¶¼Ò»Ñù£¬ÄÇÃ´Ñ¡ÔñÂô³öÊ±¼ä×îÔçµÄ½»Ò×½øĞĞ³É½»¡¾3¡¿
+-- 				/*æ­¤æ—¶äº¤æ˜“è§„åˆ™å¦‚ä¸‹ï¼š
+-- 						ä¹°å…¥è‚¡ç¥¨çš„æ—¶å€™ è¦å»æŸ¥è¯¢åœ¨æ­¤ä¹‹å‰å–å‡ºçš„è‚¡ç¥¨çš„äº¤æ˜“è®°å½•
+-- 						 å‡å¦‚å–å‡ºç±»å‹çš„è‚¡ç¥¨çš„ä»·æ ¼å…¨éƒ¨é«˜äºå°†è¦ä¹°å…¥çš„è‚¡ç¥¨çš„ä»·æ ¼ æ­¤æ—¶ è¿™ä¸ªä¹°å…¥çš„äº¤æ˜“å°±ä¸èƒ½æˆäº¤ åªèƒ½ç­‰å¾…ä¸‹ä¸€ä¸ªå–å‡ºçš„äº¤æ˜“æ˜¯å¦ç¬¦åˆæ¡ä»¶
+-- 						 å‡å¦‚æŸä¸ªå–å‡ºç±»å‹çš„äº¤æ˜“ä»·æ ¼ä½äºå°†è¦ä¹°å…¥çš„è‚¡ç¥¨ä»·æ ¼ï¼Œé‚£ä¹ˆï¼Œæ­¤æ—¶è¿™ä¸ªä¹°å…¥äº¤æ˜“ä¸è¿™ä¸ªå–å‡ºäº¤æ˜“æˆç«‹ æˆäº¤ä»·æ ¼ä¸ºå–å‡ºç±»å‹äº¤æ˜“çš„ä»·æ ¼ ã€1ã€‘
+-- 						 å‡å¦‚è¿™ä¸ªç¬¦åˆæ¡ä»¶çš„äº¤æ˜“æœ‰å¥½å‡ ä¸ªï¼Œé‚£ä¹ˆé€‰æ‹©ä»·æ ¼æœ€ä½çš„ä¹°å…¥ã€‚ã€2ã€‘
+-- 						 å‡å¦‚ç¬¦åˆè¿™ä¸ªæ¡ä»¶çš„äº¤æ˜“æœ‰å¥½å¤šä¸ªï¼Œå¹¶ä¸”ä»·æ ¼éƒ½ä¸€æ ·ï¼Œé‚£ä¹ˆé€‰æ‹©å–å‡ºæ—¶é—´æœ€æ—©çš„äº¤æ˜“è¿›è¡Œæˆäº¤ã€3ã€‘
 -- 						 
--- 						 ½«²éÑ¯³öÀ´µÄ·ûºÏÌõ¼şµÄ½»Ò×ÊıÁ¿¸³Óèmeetdealcount¡£´ËÊ±£¬meetdealcountÖ»ÓĞÁ½¸öÖµ¿ÉÑ¡£¬Ò»¸öÊÇ0´ú±íÃ»ÓĞ·ûºÏÌõ¼şµÄ Ò»¸öÊÇ1 ±íÊ¾ÕÒµ½Ò»¸ö·ûºÏÌõ¼şµÄ
+-- 						 å°†æŸ¥è¯¢å‡ºæ¥çš„ç¬¦åˆæ¡ä»¶çš„äº¤æ˜“æ•°é‡èµ‹äºˆmeetdealcountã€‚æ­¤æ—¶ï¼Œmeetdealcountåªæœ‰ä¸¤ä¸ªå€¼å¯é€‰ï¼Œä¸€ä¸ªæ˜¯0ä»£è¡¨æ²¡æœ‰ç¬¦åˆæ¡ä»¶çš„ ä¸€ä¸ªæ˜¯1 è¡¨ç¤ºæ‰¾åˆ°ä¸€ä¸ªç¬¦åˆæ¡ä»¶çš„
 -- 					*/
 				
-				IF meetdealcount = 1  THEN /*ÕÒµ½Ò»¸ö·ûºÏÌõ¼şµÄ*/
+				IF meetdealcount = 1  THEN /*æ‰¾åˆ°ä¸€ä¸ªç¬¦åˆæ¡ä»¶çš„*/
 				INSERT INTO TempRecord VALUES(Musername,Mdealtime,Mstocknum,Mstockname,Mopeartiontype,Mdealamount,Mdealprice,Mdealmoney,9);
-					IF Meetdealamount >= Mdealamount THEN /*Èç¹ûÂô³öµÄÊıÁ¿´óÓÚÂòÈëµÄÊıÁ¿ ´ËÊ±°´ÕÕÂòÈëµÄÊıÁ¿½øĞĞ½»Ò×*/
+					IF Meetdealamount >= Mdealamount THEN /*å¦‚æœå–å‡ºçš„æ•°é‡å¤§äºä¹°å…¥çš„æ•°é‡ æ­¤æ—¶æŒ‰ç…§ä¹°å…¥çš„æ•°é‡è¿›è¡Œäº¤æ˜“*/
 						SELECT buyDeal(Mdealamount,Meetstocknum,Musername,Meetdealprice,Meetusername) into res;
 						INSERT INTO MakeDeal VALUES(MeetdealID,MdealID,Meetdealprice,Meetusername,Musername,Mdealamount,Mstocknum,NOW(),3);
 					ELSEIF Meetdealamount < Mdealamount THEN
@@ -50,34 +50,34 @@ IF Mopeartiontype = 'ÂòÈë' THEN
 					END IF;
 				END IF;
 			END IF;
-	ELSEIF Mopeartiontype = "Âô³ö" THEN
+	ELSEIF Mopeartiontype = "å–å‡º" THEN
 		
 
-		UPDATE UserStock SET StockFreezed = StockFreezed + Mdealamount , StockAmount = StockAmount - Mdealamount     /*¶³½áÏàÓ¦µÄ¹ÉÆ±*/
+		UPDATE UserStock SET StockFreezed = StockFreezed + Mdealamount , StockAmount = StockAmount - Mdealamount     /*å†»ç»“ç›¸åº”çš„è‚¡ç¥¨*/
 		WHERE StockNum = Mstocknum AND UserName = Musername;
--- 		/*´ËÊ±µÄÂô³ö¹ÉÆ± ½»Ò×²ßÂÔÓ¦¸ÃÊÇÑ°ÕÒ¼Û¸ñ¸ßÓÚ×Ô¼ºµÄÂòÈëÀàĞÍµÄ½»Ò× 
--- 			¼ÙÈçÂòÈëÀàĞÍµÄ¹ÉÆ±µÄ¼Û¸ñÈ«¶¼µÍÓÚÂô³öµÄ¼Û¸ñ ÄÇÃ´Õâ¸ö½»Ò×²»ÄÜ³É½» Ö»ÄÜµÈÏÂÒ»Î»ÂòÈëµÄ½»Ò×
--- 			¼ÙÈçÄ³¸öÂòÈëÀàĞÍµÄ½»Ò×¼Û¸ñ¸ßÓÚÕâ¸öÂô³öµÄ ÄÇÃ´ ³É½»
--- 			Èç¹ûÓĞ¶à¸ö ÄÇÃ´Ñ¡Ôñ¼Û¸ñ×î¸ßµÄ
--- 			Èç¹ûÒÀÈ»ÓĞ¶à¸ö ÄÇÃ´Ñ¡ÔñÊ±¼ä×îÔçµÄ
+-- 		/*æ­¤æ—¶çš„å–å‡ºè‚¡ç¥¨ äº¤æ˜“ç­–ç•¥åº”è¯¥æ˜¯å¯»æ‰¾ä»·æ ¼é«˜äºè‡ªå·±çš„ä¹°å…¥ç±»å‹çš„äº¤æ˜“ 
+-- 			å‡å¦‚ä¹°å…¥ç±»å‹çš„è‚¡ç¥¨çš„ä»·æ ¼å…¨éƒ½ä½äºå–å‡ºçš„ä»·æ ¼ é‚£ä¹ˆè¿™ä¸ªäº¤æ˜“ä¸èƒ½æˆäº¤ åªèƒ½ç­‰ä¸‹ä¸€ä½ä¹°å…¥çš„äº¤æ˜“
+-- 			å‡å¦‚æŸä¸ªä¹°å…¥ç±»å‹çš„äº¤æ˜“ä»·æ ¼é«˜äºè¿™ä¸ªå–å‡ºçš„ é‚£ä¹ˆ æˆäº¤
+-- 			å¦‚æœæœ‰å¤šä¸ª é‚£ä¹ˆé€‰æ‹©ä»·æ ¼æœ€é«˜çš„
+-- 			å¦‚æœä¾ç„¶æœ‰å¤šä¸ª é‚£ä¹ˆé€‰æ‹©æ—¶é—´æœ€æ—©çš„
 -- 			*/
-		SELECT COUNT(*),DealID,UserName,StockNum,StockName,DealAmount,DealPrice,DealMoney                         /*²éÑ¯Âô³öÀàĞÍµÄ¹ÉÆ±*/
-				INTO meetdealcount,MeetdealID,Meetusername,Meetstocknum,Meetstockname,Meetdealamount,Meetdealprice,Meetdealmoney/*½«²éÑ¯³öÀ´µÄ¹ÉÆ±ĞÅÏ¢´æÆğÀ´*/
+		SELECT COUNT(*),DealID,UserName,StockNum,StockName,DealAmount,DealPrice,DealMoney                         /*æŸ¥è¯¢å–å‡ºç±»å‹çš„è‚¡ç¥¨*/
+				INTO meetdealcount,MeetdealID,Meetusername,Meetstocknum,Meetstockname,Meetdealamount,Meetdealprice,Meetdealmoney/*å°†æŸ¥è¯¢å‡ºæ¥çš„è‚¡ç¥¨ä¿¡æ¯å­˜èµ·æ¥*/
 				FROM TradingRecord
-				WHERE StockNum = Mstocknum                                                                                 /*¹ÉÆ±´úÂë·ûºÏµÄ*/
-				AND OpeartionType = 'ÂòÈë'                                                                                  /*ÊôÓÚÂô³öµÄ¹ÉÆ±*/
-				AND DealStatus = 0                                                                                         /*»¹Ã»ÓĞ³É½»µÄ*/
-				AND DealPrice > Mdealprice                                                                                   /*ÂòÈëµÄ¼Û¸ñ´óÓÚÂô³öµÄ¼Û¸ñµÄ ¡¾1¡¿*/ 
-				AND (DealPrice-Mdealprice) = (SELECT MAX(DealPrice-Mdealprice) FROM TradingRecord);                                      /*ÂòÈëµÄ¼Û¸ñ×î¸ßµÄ ¡¾2¡¿*/
+				WHERE StockNum = Mstocknum                                                                                 /*è‚¡ç¥¨ä»£ç ç¬¦åˆçš„*/
+				AND OpeartionType = 'ä¹°å…¥'                                                                                  /*å±äºå–å‡ºçš„è‚¡ç¥¨*/
+				AND DealStatus = 0                                                                                         /*è¿˜æ²¡æœ‰æˆäº¤çš„*/
+				AND DealPrice > Mdealprice                                                                                   /*ä¹°å…¥çš„ä»·æ ¼å¤§äºå–å‡ºçš„ä»·æ ¼çš„ ã€1ã€‘*/ 
+				AND (DealPrice-Mdealprice) = (SELECT MAX(DealPrice-Mdealprice) FROM TradingRecord);                                      /*ä¹°å…¥çš„ä»·æ ¼æœ€é«˜çš„ ã€2ã€‘*/
 -- 				AND (unix_timestamp(Mdealtime) - unix_timestamp(DealTime)) 
--- 						= (SELECT MAX(unix_timestamp(Mdealtime) - unix_timestamp(DealTime)) from TradingRecord);                /*ÂòÈëµÄÊ±¼ä×îÔçµÄ ¡¾3¡¿*/
+-- 						= (SELECT MAX(unix_timestamp(Mdealtime) - unix_timestamp(DealTime)) from TradingRecord);                /*ä¹°å…¥çš„æ—¶é—´æœ€æ—©çš„ äº¤æ˜“è®°å½•ã€3ã€‘*/
 			
-		IF meetdealcount = 1 THEN                                                                                        /*ÕÒµ½Ò»¸ö·ûºÏÌõ¼şµÄ*/
+		IF meetdealcount = 1 THEN                                                                                        /*æ‰¾åˆ°ä¸€ä¸ªç¬¦åˆæ¡ä»¶çš„*/
 		INSERT INTO TempRecordSell VALUES(Musername,Mdealtime,Mstocknum,Mstockname,Mopeartiontype,Mdealamount,Mdealprice,Mdealmoney,0);
-				IF Meetdealamount >= Mdealamount THEN  /*Èç¹û ÂòÈëµÄÊıÁ¿ ´óÓÚÂô³öµÄÊıÁ¿ Ôò´ËÊ±°´ÕÕÂô³öµÄÊıÁ¿*/
+				IF Meetdealamount >= Mdealamount THEN  /*å¦‚æœ ä¹°å…¥çš„æ•°é‡ å¤§äºå–å‡ºçš„æ•°é‡ åˆ™æ­¤æ—¶æŒ‰ç…§å–å‡ºçš„æ•°é‡*/
 					SELECT sellDeal(Mdealamount,Meetstocknum,Musername,Meetdealprice,Meetusername) into res;
 					INSERT INTO MakeDeal VALUES(MdealID,MeetdealID,Meetdealprice,Musername,Meetusername,Mdealamount,Mstocknum,NOW(),5);
-				ELSEIF Meetdealamount < dealamount  THEN /*Èç¹û ÂòÈëµÄÊıÁ¿Ğ¡ÓÚ Âô³öµÄÊıÁ¿ ÄÇÃ´´ËÊ±°´ÕÕÂòÈëµÄÀ´*/
+				ELSEIF Meetdealamount < dealamount  THEN /*å¦‚æœ ä¹°å…¥çš„æ•°é‡å°äº å–å‡ºçš„æ•°é‡ é‚£ä¹ˆæ­¤æ—¶æŒ‰ç…§ä¹°å…¥çš„æ¥*/
 					SELECT sellDeal(Meetdealamount,Meetstocknum,Musername,Meetdealprice,Meetusername) INTO res;
 					INSERT INTO MakeDeal VALUES(dealID,MeetdealID,Meetdealprice,Musername,Meetusername,Mdealamount,Mstocknum,NOW(),6);
 				END IF;
